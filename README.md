@@ -66,7 +66,9 @@ python app.py
 - Run `python app.py`
 - Set API Base URL to `http://127.0.0.1:8000/api`
 - Use **Create User** (optional) or log in with existing credentials
-- Upload CSV, view chart/table, and download PDF/CSV
+- Upload CSV, view chart/table, and download PDF
+
+Note: CSV download is currently available in the Web app (and via the API endpoint); the Desktop app includes PDF download.
 
 ## Backend API (DRF)
 - `GET /api/health/` (no auth)
