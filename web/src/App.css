@@ -41,7 +41,21 @@ input {
   outline: none;
 }
 
+select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  outline: none;
+}
+
 input:focus {
+  border-color: rgba(74, 163, 255, 0.75);
+  box-shadow: 0 0 0 4px rgba(74, 163, 255, 0.15);
+}
+
+select:focus {
   border-color: rgba(74, 163, 255, 0.75);
   box-shadow: 0 0 0 4px rgba(74, 163, 255, 0.15);
 }
@@ -411,6 +425,25 @@ input:focus {
   padding: 14px 14px 0 14px;
 }
 
+.panelHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.panelTools {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.tool {
+  display: grid;
+  gap: 6px;
+}
+
 .panelHeader h2 {
   margin: 0;
   font-size: 16px;
@@ -436,9 +469,23 @@ th,
 td {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
   white-space: nowrap;
   text-align: left;
   vertical-align: middle;
+}
+
+th:last-child,
+td:last-child {
+  border-right: none;
+}
+
+tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+tbody tr:hover td {
+  background: rgba(74, 163, 255, 0.06);
 }
 
 thead th {

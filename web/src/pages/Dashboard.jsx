@@ -9,6 +9,8 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
   const [datasets, setDatasets] = useState([])
   const [selected, setSelected] = useState(null)
   const [table, setTable] = useState(null)
+  const [tableLoading, setTableLoading] = useState(false)
+  const [tableParams, setTableParams] = useState({ limit: 100, offset: 0 })
 
   async function refreshDatasets({ keepSelection = true } = {}) {
     setError('')
@@ -41,16 +43,31 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
       return
     }
 
+    // reset paging when switching datasets
+    setTableParams((p) => (p.offset === 0 ? p : { ...p, offset: 0 }))
+  }, [selected?.id])
+
+  useEffect(() => {
+    if (!selected?.id) return
+    let cancelled = false
+
     ;(async () => {
       setError('')
+      setTableLoading(true)
       try {
-        const data = await api.getDatasetData(selected.id, { limit: 200, offset: 0 })
-        setTable(data)
+        const data = await api.getDatasetData(selected.id, tableParams)
+        if (!cancelled) setTable(data)
       } catch (e) {
-        setError(e?.response?.data?.detail || e.message || 'Failed to load dataset data')
+        if (!cancelled) setError(e?.response?.data?.detail || e.message || 'Failed to load dataset data')
+      } finally {
+        if (!cancelled) setTableLoading(false)
       }
     })()
-  }, [api, selected?.id])
+
+    return () => {
+      cancelled = true
+    }
+  }, [api, selected?.id, tableParams])
 
   async function onUpload(file) {
     if (!file) return
@@ -130,6 +147,22 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
   const summary = selected?.summary
   const averages = summary?.averages
 
+  const formatMetric = (v) => {
+    if (v === null || v === undefined || v === '') return '-'
+    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2)
+    const asNum = Number(v)
+    if (!Number.isNaN(asNum) && v !== true && v !== false) return Number.isInteger(asNum) ? String(asNum) : asNum.toFixed(2)
+    return String(v)
+  }
+
+  const tableTotal = table?.total_rows ?? 0
+  const tableOffset = table?.offset ?? tableParams.offset
+  const tableLimit = table?.limit ?? tableParams.limit
+  const tableStart = tableTotal ? Math.min(tableOffset + 1, tableTotal) : 0
+  const tableEnd = tableTotal ? Math.min(tableOffset + (table?.rows?.length ?? 0), tableTotal) : 0
+  const canPrev = tableOffset > 0
+  const canNext = tableOffset + tableLimit < tableTotal
+
   return (
     <div className="appShell">
       <aside className="sidebar">
@@ -194,7 +227,9 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
                 </div>
               </div>
             ))}
-            {!datasets.length ? <div className="muted">No datasets yet.</div> : null}
+            {!datasets.length
+              ? <div className="muted">{loading ? 'Loading datasets…' : 'No datasets yet.'}</div>
+              : null}
           </div>
         </div>
 
@@ -207,7 +242,12 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
         <div className="topbar">
           <div>
             <h1 className="pageTitle">Equipment Analytics</h1>
-            <div className="muted small">Select a dataset to see stats and charts</div>
+            <div className="muted small">
+              {selected?.original_filename
+                ? `Selected: ${selected.original_filename}`
+                : 'Select a dataset to see stats and charts'}
+              {(loading || tableLoading) ? ' • Working…' : ''}
+            </div>
           </div>
           <div className="topbarActions">
             <button className="primaryBtn" onClick={downloadPdf} disabled={!selected?.id}>
@@ -225,15 +265,15 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
           </div>
           <div className="kpi">
             <div className="kpiLabel">Avg Flowrate</div>
-            <div className="kpiValue">{averages?.flowrate ?? '-'}</div>
+            <div className="kpiValue">{formatMetric(averages?.flowrate)}</div>
           </div>
           <div className="kpi">
             <div className="kpiLabel">Avg Pressure</div>
-            <div className="kpiValue">{averages?.pressure ?? '-'}</div>
+            <div className="kpiValue">{formatMetric(averages?.pressure)}</div>
           </div>
           <div className="kpi">
             <div className="kpiLabel">Avg Temperature</div>
-            <div className="kpiValue">{averages?.temperature ?? '-'}</div>
+            <div className="kpiValue">{formatMetric(averages?.temperature)}</div>
           </div>
         </div>
 
@@ -250,11 +290,57 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
 
           <section className="panel">
             <div className="panelHeader">
-              <h2>Data Preview</h2>
-              <div className="muted small">First 200 rows</div>
+              <div className="panelHeaderRow">
+                <div>
+                  <h2>Data Preview</h2>
+                  <div className="muted small">
+                    {tableTotal
+                      ? `Showing ${tableStart}-${tableEnd} of ${tableTotal}`
+                      : 'Preview rows'}
+                  </div>
+                </div>
+
+                <div className="panelTools">
+                  <label className="tool">
+                    <span className="muted small">Rows</span>
+                    <select
+                      value={tableLimit}
+                      onChange={(e) => setTableParams({ limit: Number(e.target.value), offset: 0 })}
+                      disabled={!selected?.id || tableLoading}
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={200}>200</option>
+                    </select>
+                  </label>
+
+                  <button
+                    className="ghostBtn"
+                    onClick={() => setTableParams((p) => ({ ...p, offset: Math.max(0, p.offset - p.limit) }))}
+                    disabled={!selected?.id || tableLoading || !canPrev}
+                    title="Previous page"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    className="ghostBtn"
+                    onClick={() => setTableParams((p) => ({ ...p, offset: p.offset + p.limit }))}
+                    disabled={!selected?.id || tableLoading || !canNext}
+                    title="Next page"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="panelBody">
-              {table ? <DataTable columns={table.columns} rows={table.rows} /> : <div className="muted">No data</div>}
+              {tableLoading
+                ? <div className="muted">Loading preview…</div>
+                : (table
+                    ? <DataTable columns={table.columns} rows={table.rows} />
+                    : <div className="muted">No data</div>)}
             </div>
           </section>
         </div>

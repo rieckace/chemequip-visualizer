@@ -20,7 +20,6 @@ python -m venv .venv
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver
 ```
 
@@ -52,10 +51,13 @@ python app.py
 
 ## Backend API (DRF)
 - `GET /api/health/` (no auth)
+- `POST /api/auth/register/` (no auth) → create a user (used by web/desktop UI)
 - `GET /api/datasets/` (basic auth) → latest 5 uploads
 - `POST /api/datasets/` (basic auth, multipart `file`) → upload CSV + returns summary
 - `GET /api/datasets/<id>/data/?limit=200&offset=0` (basic auth) → table preview
 - `GET /api/datasets/<id>/report/` (basic auth) → PDF report
+
+Note: `createsuperuser` is optional; you can create normal users from the Web/Desktop app.
 
 ## Sample CSV
 Use [data/sample_equipment_data.csv](data/sample_equipment_data.csv) for quick testing.

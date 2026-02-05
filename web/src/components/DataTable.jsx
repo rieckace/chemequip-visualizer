@@ -1,5 +1,6 @@
 export function DataTable({ columns, rows }) {
   if (!columns?.length) return null
+  if (!rows?.length) return <div className="muted">No rows to display.</div>
 
   const formatHeader = (key) => {
     const text = String(key ?? '')
