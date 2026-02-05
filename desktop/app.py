@@ -7,7 +7,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
+    QDialog,
+    QDialogButtonBox,
     QFileDialog,
+    QFormLayout,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -162,6 +165,17 @@ class ApiClient:
         self.base_url = base_url.rstrip('/')
         self.auth = (auth.username, auth.password)
 
+    @staticmethod
+    def register_user(base_url: str, username: str, password: str, password2: str):
+        base_url = (base_url or '').rstrip('/')
+        r = requests.post(
+            f"{base_url}/auth/register/",
+            json={"username": username, "password": password, "password2": password2},
+            timeout=20,
+        )
+        r.raise_for_status()
+        return r.json()
+
     def health(self):
         return requests.get(f"{self.base_url}/health/", timeout=10).json()
 
@@ -274,6 +288,9 @@ class MainWindow(QMainWindow):
         self.connect_btn = QPushButton("Connect")
         self.connect_btn.clicked.connect(self._connect)
 
+        self.register_btn = QPushButton("Create User")
+        self.register_btn.clicked.connect(self._open_register)
+
         self.refresh_btn = QPushButton("Refresh History")
         self.refresh_btn.clicked.connect(self._refresh)
         self.refresh_btn.setEnabled(False)
@@ -300,6 +317,7 @@ class MainWindow(QMainWindow):
 
         buttons = QHBoxLayout()
         buttons.addWidget(self.connect_btn)
+        buttons.addWidget(self.register_btn)
         buttons.addWidget(self.refresh_btn)
         buttons.addWidget(self.upload_btn)
         buttons.addWidget(self.pdf_btn)
@@ -316,6 +334,57 @@ class MainWindow(QMainWindow):
         grid.addWidget(self.status, 3, 0, 1, 4)
 
         return box
+
+    def _open_register(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Create New User")
+
+        layout = QVBoxLayout(dialog)
+        form = QFormLayout()
+        layout.addLayout(form)
+
+        username = QLineEdit()
+        password = QLineEdit()
+        password2 = QLineEdit()
+        password.setEchoMode(QLineEdit.Password)
+        password2.setEchoMode(QLineEdit.Password)
+
+        form.addRow("Username", username)
+        form.addRow("Password", password)
+        form.addRow("Confirm Password", password2)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.button(QDialogButtonBox.Ok).setText("Create")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        if dialog.exec_() != QDialog.Accepted:
+            return
+
+        u = username.text().strip()
+        p1 = password.text()
+        p2 = password2.text()
+        if not u or not p1 or not p2:
+            QMessageBox.warning(self, "Missing", "Please fill all fields")
+            return
+
+        try:
+            ApiClient.register_user(self.base_url.text().strip(), u, p1, p2)
+        except requests.HTTPError as exc:
+            try:
+                detail = exc.response.json().get('detail')
+            except Exception:
+                detail = None
+            QMessageBox.critical(self, "Registration failed", detail or str(exc))
+            return
+        except Exception as exc:
+            QMessageBox.critical(self, "Registration failed", str(exc))
+            return
+
+        QMessageBox.information(self, "Success", "User created. You can now log in.")
+        self.username.setText(u)
+        self.password.setText(p1)
 
     def _build_summary_group(self):
         box = QGroupBox("Summary")

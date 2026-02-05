@@ -429,6 +429,7 @@ input:focus {
 table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
 }
 
 th,
@@ -436,10 +437,15 @@ td {
   padding: 10px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   white-space: nowrap;
+  text-align: left;
+  vertical-align: middle;
 }
 
 thead th {
   position: sticky;
   top: 0;
   background: rgba(10, 14, 28, 0.95);
+  z-index: 1;
+  font-weight: 800;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }

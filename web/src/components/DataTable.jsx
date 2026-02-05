@@ -1,13 +1,22 @@
 export function DataTable({ columns, rows }) {
   if (!columns?.length) return null
 
+  const formatHeader = (key) => {
+    const text = String(key ?? '')
+      .replace(/_/g, ' ')
+      .trim()
+      .toLowerCase()
+    if (!text) return ''
+    return text.charAt(0).toUpperCase() + text.slice(1)
+  }
+
   return (
     <div className="tableWrap">
       <table>
         <thead>
           <tr>
             {columns.map((c) => (
-              <th key={c}>{c}</th>
+              <th key={c}>{formatHeader(c)}</th>
             ))}
           </tr>
         </thead>
