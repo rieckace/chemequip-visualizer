@@ -6,10 +6,13 @@ from .views import (
     DatasetListCreateView,
     DatasetReportView,
     HealthView,
+    RegisterView,
 )
 
 urlpatterns = [
     path('health/', HealthView.as_view(), name='health'),
+
+	path('auth/register/', RegisterView.as_view(), name='auth-register'),
 
     path('datasets/', DatasetListCreateView.as_view(), name='dataset-list-create'),
     path('datasets/<int:dataset_id>/', DatasetDetailView.as_view(), name='dataset-detail'),

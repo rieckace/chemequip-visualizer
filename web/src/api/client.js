@@ -7,6 +7,11 @@ export function createApi({ baseURL, username, password }) {
   })
 
   return {
+    async register({ username, password, password2 }) {
+      const res = await client.post('/auth/register/', { username, password, password2 })
+      return res.data
+    },
+
     async health() {
       const res = await client.get('/health/')
       return res.data

@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -21,6 +24,36 @@ class HealthView(APIView):
 
 	def get(self, request):
 		return Response({'status': 'ok'})
+
+
+class RegisterView(APIView):
+	permission_classes = [AllowAny]
+	authentication_classes: list = []
+
+	def post(self, request):
+		username = (request.data.get('username') or '').strip()
+		password = request.data.get('password') or ''
+		password2 = request.data.get('password2') or ''
+
+		if not username:
+			return Response({'detail': 'Username is required.'}, status=status.HTTP_400_BAD_REQUEST)
+		if not password:
+			return Response({'detail': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
+		if password != password2:
+			return Response({'detail': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		User = get_user_model()
+		if User.objects.filter(username=username).exists():
+			return Response({'detail': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		try:
+			validate_password(password)
+		except ValidationError as exc:
+			messages = exc.messages if hasattr(exc, 'messages') else [str(exc)]
+			return Response({'detail': ' '.join(messages)}, status=status.HTTP_400_BAD_REQUEST)
+
+		user = User.objects.create_user(username=username, password=password)
+		return Response({'id': user.id, 'username': user.username}, status=status.HTTP_201_CREATED)
 
 
 class DatasetListCreateView(APIView):
