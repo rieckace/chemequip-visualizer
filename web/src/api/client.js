@@ -22,6 +22,11 @@ export function createApi({ baseURL, username, password }) {
       return res.data
     },
 
+    async deleteDataset(datasetId) {
+      const res = await client.delete(`/datasets/${datasetId}/`)
+      return res.data
+    },
+
     async uploadCsv(file) {
       const form = new FormData()
       form.append('file', file)

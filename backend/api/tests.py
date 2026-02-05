@@ -15,6 +15,7 @@ class ApiSmokeTests(APITestCase):
 	def setUp(self):
 		User = get_user_model()
 		self.user = User.objects.create_user(username='tester', password='tester12345')
+		self.other = User.objects.create_user(username='other', password='other12345')
 
 	def test_health_no_auth(self):
 		res = self.client.get('/api/health/')
@@ -52,3 +53,31 @@ class ApiSmokeTests(APITestCase):
 		self.assertEqual(res.status_code, status.HTTP_200_OK)
 		content = b''.join(res.streaming_content)
 		self.assertTrue(content.startswith(b'%PDF'))
+
+	def test_datasets_are_isolated_per_user_and_deletable(self):
+		upload = SimpleUploadedFile(
+			'sample.csv',
+			SAMPLE_CSV.encode('utf-8'),
+			content_type='text/csv',
+		)
+
+		self.client.force_authenticate(user=self.user)
+		res = self.client.post('/api/datasets/', data={'file': upload}, format='multipart')
+		self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+		my_id = res.data['id']
+
+		self.client.force_authenticate(user=self.other)
+		res = self.client.get('/api/datasets/')
+		self.assertEqual(res.status_code, status.HTTP_200_OK)
+		self.assertEqual(len(res.data), 0)
+
+		res = self.client.get(f'/api/datasets/{my_id}/')
+		self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+		self.client.force_authenticate(user=self.user)
+		res = self.client.delete(f'/api/datasets/{my_id}/')
+		self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+		res = self.client.get('/api/datasets/')
+		self.assertEqual(res.status_code, status.HTTP_200_OK)
+		self.assertEqual(len(res.data), 0)

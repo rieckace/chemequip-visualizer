@@ -85,6 +85,25 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
     }
   }
 
+  async function deleteDataset(datasetId) {
+    if (!datasetId) return
+    const ok = window.confirm('Delete this dataset from history?')
+    if (!ok) return
+
+    setError('')
+    setLoading(true)
+    try {
+      await api.deleteDataset(datasetId)
+      const wasSelected = selected?.id === datasetId
+      await refreshDatasets({ keepSelection: !wasSelected })
+      if (wasSelected) setSelected(null)
+    } catch (e) {
+      setError(e?.response?.data?.detail || e.message || 'Delete failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const summary = selected?.summary
   const averages = summary?.averages
 
@@ -121,23 +140,34 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
           <div className="hint small">Only the latest 5 uploads are stored.</div>
         </div>
 
-        <div className="sidebarSection" style={{ flex: 1, minHeight: 0 }}>
+        <div className="sidebarSection sidebarSection--fill" style={{ flex: 1, minHeight: 0 }}>
           <div className="sectionTitle">History</div>
           <div className="historyList">
             {datasets.map((d) => (
-              <button
-                key={d.id}
-                className={selected?.id === d.id ? 'historyItem active' : 'historyItem'}
-                onClick={() => setSelected(d)}
-                title={d.original_filename}
-              >
-                <div className="historyTop">
-                  <span className="historyId">#{d.id}</span>
-                  <span className="historyRows">{d.row_count} rows</span>
-                </div>
-                <div className="historyName">{d.original_filename}</div>
-                <div className="historyTime">{new Date(d.uploaded_at).toLocaleString()}</div>
-              </button>
+              <div key={d.id} className="historyRow">
+                <button
+                  className={selected?.id === d.id ? 'historyItem active' : 'historyItem'}
+                  onClick={() => setSelected(d)}
+                  title={d.original_filename}
+                  disabled={loading}
+                >
+                  <div className="historyTop">
+                    <span className="historyId">#{d.id}</span>
+                    <span className="historyRows">{d.row_count} rows</span>
+                  </div>
+                  <div className="historyName">{d.original_filename}</div>
+                  <div className="historyTime">{new Date(d.uploaded_at).toLocaleString()}</div>
+                </button>
+
+                <button
+                  className="historyDelete"
+                  title="Delete"
+                  onClick={() => deleteDataset(d.id)}
+                  disabled={loading}
+                >
+                  Delete
+                </button>
+              </div>
             ))}
             {!datasets.length ? <div className="muted">No datasets yet.</div> : null}
           </div>

@@ -73,6 +73,15 @@ class ApiClient:
         r.raise_for_status()
         return r.content
 
+    def delete_dataset(self, dataset_id: int):
+        r = requests.delete(
+            f"{self.base_url}/datasets/{dataset_id}/",
+            auth=self.auth,
+            timeout=20,
+        )
+        r.raise_for_status()
+        return True
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -136,6 +145,10 @@ class MainWindow(QMainWindow):
         self.pdf_btn.clicked.connect(self._save_pdf)
         self.pdf_btn.setEnabled(False)
 
+        self.delete_btn = QPushButton("Delete Selected")
+        self.delete_btn.clicked.connect(self._delete_selected)
+        self.delete_btn.setEnabled(False)
+
         grid.addWidget(QLabel("API Base URL"), 0, 0)
         grid.addWidget(self.base_url, 0, 1, 1, 3)
 
@@ -149,6 +162,7 @@ class MainWindow(QMainWindow):
         buttons.addWidget(self.refresh_btn)
         buttons.addWidget(self.upload_btn)
         buttons.addWidget(self.pdf_btn)
+        buttons.addWidget(self.delete_btn)
         buttons.addStretch(1)
         grid.addLayout(buttons, 2, 0, 1, 4)
 
@@ -220,6 +234,7 @@ class MainWindow(QMainWindow):
 
         self._set_status(f"Loaded {len(self.datasets)} dataset(s)")
         self.pdf_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
 
     def _upload(self):
         if not self.api:
@@ -253,6 +268,31 @@ class MainWindow(QMainWindow):
         self._draw_chart(summary.get('type_distribution') or {})
         self._load_table(self.selected['id'])
         self.pdf_btn.setEnabled(True)
+        self.delete_btn.setEnabled(True)
+
+    def _delete_selected(self):
+        if not self.api or not self.selected:
+            return
+        dataset_id = self.selected.get('id')
+        if not dataset_id:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Confirm delete",
+            f"Delete dataset #{dataset_id} from history?",
+            QMessageBox.Yes | QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+
+        try:
+            self.api.delete_dataset(int(dataset_id))
+            self._set_status(f"Deleted dataset #{dataset_id}")
+            self.selected = None
+            self._refresh()
+        except Exception as exc:
+            QMessageBox.critical(self, "Delete failed", str(exc))
 
     def _draw_chart(self, dist: dict):
         self.figure.clear()

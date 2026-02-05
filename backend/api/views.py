@@ -58,7 +58,7 @@ class RegisterView(APIView):
 
 class DatasetListCreateView(APIView):
 	def get(self, request):
-		datasets = Dataset.objects.all()[:5]
+		datasets = Dataset.objects.filter(user=request.user).order_by('-uploaded_at')[:5]
 		return Response(DatasetSerializer(datasets, many=True).data)
 
 	def post(self, request):
@@ -67,6 +67,7 @@ class DatasetListCreateView(APIView):
 		file_obj = upload.validated_data['file']
 
 		dataset = Dataset.objects.create(
+			user=request.user,
 			original_filename=getattr(file_obj, 'name', 'upload.csv'),
 			csv_file=file_obj,
 		)
@@ -82,7 +83,11 @@ class DatasetListCreateView(APIView):
 		dataset.save(update_fields=['row_count', 'summary'])
 
 		# Keep only the most recent 5 datasets.
-		old_ids = list(Dataset.objects.order_by('-uploaded_at').values_list('id', flat=True)[5:])
+		old_ids = list(
+			Dataset.objects.filter(user=request.user)
+			.order_by('-uploaded_at')
+			.values_list('id', flat=True)[5:]
+		)
 		if old_ids:
 			Dataset.objects.filter(id__in=old_ids).delete()
 
@@ -91,13 +96,18 @@ class DatasetListCreateView(APIView):
 
 class DatasetDetailView(APIView):
 	def get(self, request, dataset_id: int):
-		dataset = get_object_or_404(Dataset, id=dataset_id)
+		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
 		return Response(DatasetSerializer(dataset).data)
+
+	def delete(self, request, dataset_id: int):
+		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
+		dataset.delete()
+		return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DatasetDataView(APIView):
 	def get(self, request, dataset_id: int):
-		dataset = get_object_or_404(Dataset, id=dataset_id)
+		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
 
 		try:
 			parsed = parse_and_analyze_csv(dataset.csv_file.path)
@@ -127,7 +137,7 @@ class DatasetDataView(APIView):
 
 class DatasetReportView(APIView):
 	def get(self, request, dataset_id: int):
-		dataset = get_object_or_404(Dataset, id=dataset_id)
+		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
 		pdf_bytes = build_dataset_report_pdf(
 			title=f"Equipment Dataset Report (#{dataset.id})",
 			summary=dataset.summary or {},

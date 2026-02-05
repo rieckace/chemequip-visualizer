@@ -258,6 +258,10 @@ input:focus {
   gap: 10px;
 }
 
+.sidebarSection--fill {
+  grid-template-rows: auto 1fr;
+}
+
 .sectionTitle {
   font-weight: 700;
 }
@@ -271,7 +275,15 @@ input:focus {
   display: grid;
   gap: 8px;
   overflow: auto;
-  max-height: 48vh;
+  min-height: 0;
+  max-height: none;
+}
+
+.historyRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .historyItem {
@@ -281,6 +293,19 @@ input:focus {
   padding: 10px 10px;
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(0, 0, 0, 0.18);
+}
+
+.historyDelete {
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 77, 90, 0.35);
+  background: rgba(255, 77, 90, 0.12);
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+}
+
+.historyDelete:disabled {
+  opacity: 0.6;
 }
 
 .historyItem.active {
