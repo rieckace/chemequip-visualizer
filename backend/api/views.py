@@ -166,3 +166,18 @@ class DatasetReportView(APIView):
 			filename=f"dataset_{dataset.id}_report.pdf",
 			content_type='application/pdf',
 		)
+
+
+class DatasetCsvDownloadView(APIView):
+	def get(self, request, dataset_id: int):
+		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
+		name = (dataset.original_filename or f"dataset_{dataset.id}.csv").strip() or f"dataset_{dataset.id}.csv"
+		if not name.lower().endswith('.csv'):
+			name = f"{name}.csv"
+		file_handle = dataset.csv_file.open('rb')
+		return FileResponse(
+			file_handle,
+			as_attachment=True,
+			filename=name,
+			content_type='text/csv',
+		)

@@ -54,5 +54,12 @@ export function createApi({ baseURL, username, password }) {
       })
       return res.data
     },
+
+    async downloadCsv(datasetId) {
+      const res = await client.get(`/datasets/${datasetId}/csv/`, {
+        responseType: 'blob',
+      })
+      return res.data
+    },
   }
 }

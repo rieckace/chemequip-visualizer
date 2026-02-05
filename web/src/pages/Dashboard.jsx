@@ -102,6 +102,25 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
     }
   }
 
+  async function downloadCsv() {
+    if (!selected?.id) return
+    setError('')
+    try {
+      const blob = await api.downloadCsv(selected.id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const base = (selected.original_filename || `dataset_${selected.id}`).trim() || `dataset_${selected.id}`
+      a.download = base.toLowerCase().endsWith('.csv') ? base : `${base}.csv`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      setError(e?.response?.data?.detail || e.message || 'CSV download failed')
+    }
+  }
+
   async function deleteDataset(datasetId) {
     if (!datasetId) return
     const ok = window.confirm('Delete this dataset from history?')
@@ -250,6 +269,9 @@ export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
             </div>
           </div>
           <div className="topbarActions">
+            <button className="ghostBtn" onClick={downloadCsv} disabled={!selected?.id}>
+              Download CSV
+            </button>
             <button className="primaryBtn" onClick={downloadPdf} disabled={!selected?.id}>
               Download PDF
             </button>

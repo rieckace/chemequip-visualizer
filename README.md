@@ -55,6 +55,7 @@ python app.py
 - `GET /api/datasets/` (basic auth) → latest 5 uploads
 - `POST /api/datasets/` (basic auth, multipart `file`) → upload CSV + returns summary
 - `GET /api/datasets/<id>/data/?limit=200&offset=0` (basic auth) → table preview
+- `GET /api/datasets/<id>/csv/` (basic auth) → download the original CSV
 - `GET /api/datasets/<id>/report/` (basic auth) → PDF report
 
 Note: `createsuperuser` is optional; you can create normal users from the Web/Desktop app.

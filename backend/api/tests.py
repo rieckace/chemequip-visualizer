@@ -54,6 +54,11 @@ class ApiSmokeTests(APITestCase):
 		content = b''.join(res.streaming_content)
 		self.assertTrue(content.startswith(b'%PDF'))
 
+		res = self.client.get(f'/api/datasets/{dataset_id}/csv/')
+		self.assertEqual(res.status_code, status.HTTP_200_OK)
+		csv_bytes = b''.join(res.streaming_content)
+		self.assertIn(b'Equipment Name,Type,Flowrate,Pressure,Temperature', csv_bytes)
+
 	def test_datasets_are_isolated_per_user_and_deletable(self):
 		upload = SimpleUploadedFile(
 			'sample.csv',
