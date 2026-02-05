@@ -258,10 +258,6 @@ input:focus {
   gap: 10px;
 }
 
-.sidebarSection--fill {
-  grid-template-rows: auto 1fr;
-}
-
 .sectionTitle {
   font-weight: 700;
 }
@@ -275,15 +271,12 @@ input:focus {
   display: grid;
   gap: 8px;
   overflow: auto;
-  min-height: 0;
-  max-height: none;
+  height: clamp(240px, 45vh, 420px);
 }
 
-.historyRow {
+.historyCard {
   display: grid;
-  grid-template-columns: 1fr auto;
   gap: 8px;
-  align-items: stretch;
 }
 
 .historyItem {
@@ -293,6 +286,12 @@ input:focus {
   padding: 10px 10px;
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(0, 0, 0, 0.18);
+}
+
+.historyActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .historyDelete {

@@ -27,6 +27,11 @@ export function createApi({ baseURL, username, password }) {
       return res.data
     },
 
+    async renameDataset(datasetId, original_filename) {
+      const res = await client.patch(`/datasets/${datasetId}/`, { original_filename })
+      return res.data
+    },
+
     async uploadCsv(file) {
       const form = new FormData()
       form.append('file', file)

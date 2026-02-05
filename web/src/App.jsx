@@ -54,6 +54,7 @@ function App() {
     <Dashboard
       api={api}
       apiBaseUrl={session.apiUrl}
+      username={session.username}
       onLogout={() => {
         localStorage.removeItem('session')
         setSession(null)

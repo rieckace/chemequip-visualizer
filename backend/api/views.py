@@ -99,6 +99,21 @@ class DatasetDetailView(APIView):
 		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
 		return Response(DatasetSerializer(dataset).data)
 
+	def patch(self, request, dataset_id: int):
+		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
+		name = request.data.get('original_filename', None)
+		if name is None:
+			return Response({'detail': 'original_filename is required.'}, status=status.HTTP_400_BAD_REQUEST)
+		name = str(name).strip()
+		if not name:
+			return Response({'detail': 'original_filename cannot be empty.'}, status=status.HTTP_400_BAD_REQUEST)
+		if len(name) > 255:
+			return Response({'detail': 'original_filename is too long.'}, status=status.HTTP_400_BAD_REQUEST)
+
+		dataset.original_filename = name
+		dataset.save(update_fields=['original_filename'])
+		return Response(DatasetSerializer(dataset).data)
+
 	def delete(self, request, dataset_id: int):
 		dataset = get_object_or_404(Dataset, id=dataset_id, user=request.user)
 		dataset.delete()

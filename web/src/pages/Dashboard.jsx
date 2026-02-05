@@ -104,6 +104,29 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
     }
   }
 
+  async function renameDataset(dataset) {
+    if (!dataset?.id) return
+    const next = window.prompt('Rename dataset', dataset.original_filename || '')
+    if (next == null) return
+    const name = next.trim()
+    if (!name) {
+      window.alert('Name cannot be empty.')
+      return
+    }
+
+    setError('')
+    setLoading(true)
+    try {
+      const updated = await api.renameDataset(dataset.id, name)
+      await refreshDatasets({ keepSelection: true })
+      if (selected?.id === updated.id) setSelected(updated)
+    } catch (e) {
+      setError(e?.response?.data?.detail || e.message || 'Rename failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const summary = selected?.summary
   const averages = summary?.averages
 
@@ -121,6 +144,9 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
 
           <div className="sidebarMeta">
             <div className="pill">API: {apiBaseUrl}</div>
+            {typeof username === 'string' && username.trim()
+              ? <div className="pill">Signed in as: {username}</div>
+              : null}
           </div>
         </div>
 
@@ -140,11 +166,11 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
           <div className="hint small">Only the latest 5 uploads are stored.</div>
         </div>
 
-        <div className="sidebarSection sidebarSection--fill" style={{ flex: 1, minHeight: 0 }}>
+        <div className="sidebarSection">
           <div className="sectionTitle">History</div>
           <div className="historyList">
             {datasets.map((d) => (
-              <div key={d.id} className="historyRow">
+              <div key={d.id} className="historyCard">
                 <button
                   className={selected?.id === d.id ? 'historyItem active' : 'historyItem'}
                   onClick={() => setSelected(d)}
@@ -159,14 +185,14 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
                   <div className="historyTime">{new Date(d.uploaded_at).toLocaleString()}</div>
                 </button>
 
-                <button
-                  className="historyDelete"
-                  title="Delete"
-                  onClick={() => deleteDataset(d.id)}
-                  disabled={loading}
-                >
-                  Delete
-                </button>
+                <div className="historyActions">
+                  <button className="ghostBtn" onClick={() => renameDataset(d)} disabled={loading}>
+                    Rename
+                  </button>
+                  <button className="historyDelete" onClick={() => deleteDataset(d.id)} disabled={loading}>
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
             {!datasets.length ? <div className="muted">No datasets yet.</div> : null}
