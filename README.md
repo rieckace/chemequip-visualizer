@@ -49,6 +49,25 @@ pip install -r requirements.txt
 python app.py
 ```
 
+## Quick Demo (2–3 minutes)
+
+1) Start the backend.
+
+2) Web demo:
+- Open `http://localhost:5173/`
+- Go to **Register** and set API Base URL to `http://127.0.0.1:8000/api`
+- Create a user, then log in
+- Upload a CSV (use the sample below)
+- Check KPIs + Type Distribution chart
+- Use **Download PDF** and **Download CSV**
+- Verify History rename/delete, and Data Preview pagination
+
+3) Desktop demo:
+- Run `python app.py`
+- Set API Base URL to `http://127.0.0.1:8000/api`
+- Use **Create User** (optional) or log in with existing credentials
+- Upload CSV, view chart/table, and download PDF/CSV
+
 ## Backend API (DRF)
 - `GET /api/health/` (no auth)
 - `POST /api/auth/register/` (no auth) → create a user (used by web/desktop UI)
