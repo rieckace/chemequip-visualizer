@@ -3,15 +3,14 @@ import { useMemo, useState } from 'react'
 import { createApi } from '../api/client'
 
 export function LoginPage({ apiBaseUrl, onLogin, onGoRegister }) {
-  const [apiUrl, setApiUrl] = useState(apiBaseUrl)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const api = useMemo(
-    () => createApi({ baseURL: apiUrl, username, password }),
-    [apiUrl, username, password]
+    () => createApi({ baseURL: apiBaseUrl, username, password }),
+    [apiBaseUrl, username, password]
   )
 
   async function handleSubmit(e) {
@@ -27,7 +26,7 @@ export function LoginPage({ apiBaseUrl, onLogin, onGoRegister }) {
     try {
       // This endpoint requires auth. If credentials are wrong, it will 401.
       await api.listDatasets()
-      onLogin({ apiUrl, username, password })
+      onLogin({ apiUrl: apiBaseUrl, username, password })
     } catch (err) {
       const msg = err?.response?.status === 401
         ? 'Invalid credentials. Please try again.'
@@ -51,37 +50,25 @@ export function LoginPage({ apiBaseUrl, onLogin, onGoRegister }) {
 
         <form onSubmit={handleSubmit} className="authForm">
           <label className="field">
-            <span>API Base URL</span>
+            <span>Username</span>
             <input
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="http://127.0.0.1:8000/api"
-              spellCheck={false}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="your username"
+              autoComplete="username"
             />
           </label>
 
-          <div className="twoCol">
-            <label className="field">
-              <span>Username</span>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="your username"
-                autoComplete="username"
-              />
-            </label>
-
-            <label className="field">
-              <span>Password</span>
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="your password"
-                type="password"
-                autoComplete="current-password"
-              />
-            </label>
-          </div>
+          <label className="field">
+            <span>Password</span>
+            <input
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="your password"
+              type="password"
+              autoComplete="current-password"
+            />
+          </label>
 
           {error ? <div className="alert">{error}</div> : null}
 

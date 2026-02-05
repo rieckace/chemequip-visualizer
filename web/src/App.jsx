@@ -19,6 +19,10 @@ function App() {
     }
   })
 
+  // Keep a single configured API base URL for auth screens.
+  // Login no longer shows/edits the URL, but Register does.
+  const [apiBaseUrl, setApiBaseUrl] = useState(defaultApiBaseUrl)
+
   const api = useMemo(() => {
     if (!session?.apiUrl || !session?.username || !session?.password) return null
     return createApi({ baseURL: session.apiUrl, username: session.username, password: session.password })
@@ -28,8 +32,9 @@ function App() {
     if (authView === 'register') {
       return (
         <RegisterPage
-          apiBaseUrl={defaultApiBaseUrl}
-          onRegistered={() => {
+          apiBaseUrl={apiBaseUrl}
+          onRegistered={(info) => {
+            if (info?.apiUrl) setApiBaseUrl(info.apiUrl)
             // After successful registration, bring user back to login.
             setAuthView('login')
           }}
@@ -40,7 +45,7 @@ function App() {
 
     return (
       <LoginPage
-        apiBaseUrl={defaultApiBaseUrl}
+        apiBaseUrl={apiBaseUrl}
         onLogin={(next) => {
           localStorage.setItem('session', JSON.stringify(next))
           setSession(next)

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import requests
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -25,6 +26,129 @@ from PyQt5.QtWidgets import (
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+
+APP_QSS = """
+QWidget {
+    font-family: Segoe UI, Arial;
+    font-size: 13px;
+    color: #111827;
+}
+
+QMainWindow {
+    background: #f3f6fb;
+}
+
+QGroupBox {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-top: 12px;
+    padding: 12px;
+    background: #ffffff;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 6px;
+    color: #111827;
+    font-weight: 700;
+}
+
+QLabel {
+    color: #111827;
+}
+
+QLineEdit {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    selection-background-color: rgba(59, 130, 246, 120);
+}
+
+QLineEdit:focus {
+    border: 1px solid rgba(59, 130, 246, 200);
+}
+
+QPushButton {
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+}
+
+QPushButton:hover {
+    background: #f3f4f6;
+}
+
+QPushButton:pressed {
+    background: #e5e7eb;
+}
+
+QPushButton:disabled {
+    color: rgba(17, 24, 39, 120);
+    border-color: #e5e7eb;
+    background: #f9fafb;
+}
+
+QListWidget {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 6px;
+}
+
+QListWidget::item {
+    padding: 10px;
+    margin: 6px 2px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #eef2f7;
+}
+
+QListWidget::item:selected {
+    border: 1px solid rgba(59, 130, 246, 200);
+    background: rgba(59, 130, 246, 24);
+}
+
+QTableWidget {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    gridline-color: #eef2f7;
+}
+
+QHeaderView::section {
+    background: #f9fafb;
+    color: #111827;
+    padding: 8px;
+    border: 0px;
+    border-right: 1px solid #eef2f7;
+    border-bottom: 1px solid #eef2f7;
+    font-weight: 700;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 6px 2px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(17, 24, 39, 55);
+    border-radius: 5px;
+    min-height: 20px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QMessageBox {
+    background: #ffffff;
+}
+"""
 
 
 @dataclass
@@ -89,6 +213,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Chemical Equipment Visualizer (Desktop)")
         self.resize(1100, 700)
 
+        # Polished look: global font + light theme
+        self.setFont(QFont("Segoe UI", 10))
+        app = QApplication.instance()
+        if app is not None:
+            app.setStyleSheet(APP_QSS)
+
         self.api = None
         self.datasets = []
         self.selected = None
@@ -97,10 +227,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
         layout = QVBoxLayout(root)
 
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(14)
+
         layout.addWidget(self._build_auth_group())
 
         body = QHBoxLayout()
         layout.addLayout(body, 1)
+
+        body.setSpacing(14)
 
         self.list_widget = QListWidget()
         self.list_widget.itemSelectionChanged.connect(self._on_select_dataset)
@@ -119,11 +254,17 @@ class MainWindow(QMainWindow):
         self.table = QTableWidget()
         right.addWidget(self.table, 3)
 
+        self.table.setAlternatingRowColors(True)
+        self.table.setShowGrid(False)
+
         self._set_status("Enter credentials and click Connect")
 
     def _build_auth_group(self):
         box = QGroupBox("Backend Connection (Basic Auth)")
         grid = QGridLayout(box)
+
+        grid.setHorizontalSpacing(10)
+        grid.setVerticalSpacing(10)
 
         self.base_url = QLineEdit("http://127.0.0.1:8000/api")
         self.username = QLineEdit()
@@ -169,6 +310,9 @@ class MainWindow(QMainWindow):
         self.status = QLabel("")
         self.status.setWordWrap(True)
         self.status.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.status.setStyleSheet(
+            "padding: 10px; border-radius: 12px; background: #f9fafb; border: 1px solid #eef2f7; color: #111827;"
+        )
         grid.addWidget(self.status, 3, 0, 1, 4)
 
         return box
@@ -176,6 +320,9 @@ class MainWindow(QMainWindow):
     def _build_summary_group(self):
         box = QGroupBox("Summary")
         grid = QGridLayout(box)
+
+        grid.setHorizontalSpacing(14)
+        grid.setVerticalSpacing(10)
 
         self.total_lbl = QLabel("-")
         self.flow_lbl = QLabel("-")
@@ -299,10 +446,19 @@ class MainWindow(QMainWindow):
         ax = self.figure.add_subplot(111)
         labels = list(dist.keys())
         values = [dist[k] for k in labels]
-        ax.bar(labels, values)
-        ax.set_title("Type Distribution")
-        ax.set_ylabel("Count")
+        self.figure.patch.set_facecolor('#ffffff')
+        ax.set_facecolor('#ffffff')
+
+        ax.bar(labels, values, color='#3b82f6')
+        ax.set_title("Type Distribution", color='#111827')
+        ax.set_ylabel("Count", color='#111827')
+        ax.tick_params(axis='y', colors='#111827')
         ax.tick_params(axis='x', rotation=30)
+        ax.tick_params(axis='x', colors='#111827')
+        ax.grid(axis='y', color='#9ca3af', alpha=0.35, linestyle='-')
+
+        for spine in ax.spines.values():
+            spine.set_color((17/255, 24/255, 39/255, 0.18))
         self.figure.tight_layout()
         self.canvas.draw()
 

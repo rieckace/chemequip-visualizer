@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { DataTable } from '../components/DataTable'
 import { TypeDistributionChart } from '../components/TypeDistributionChart'
 
-export function Dashboard({ api, apiBaseUrl, onLogout }) {
+export function Dashboard({ api, apiBaseUrl, username, onLogout }) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [datasets, setDatasets] = useState([])
@@ -143,7 +143,6 @@ export function Dashboard({ api, apiBaseUrl, onLogout }) {
           </div>
 
           <div className="sidebarMeta">
-            <div className="pill">API: {apiBaseUrl}</div>
             {typeof username === 'string' && username.trim()
               ? <div className="pill">Signed in as: {username}</div>
               : null}
